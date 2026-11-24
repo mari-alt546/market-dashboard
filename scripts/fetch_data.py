@@ -213,7 +213,9 @@ BROWSER_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTM
 
 
 def fear_greed():
-    req = urllib.request.Request(CNN_FG, headers={"User-Agent": BROWSER_UA, "Accept": "application/json"})
+    req = urllib.request.Request(CNN_FG, headers={
+        "User-Agent": BROWSER_UA, "Accept": "application/json",
+        "Referer": "https://edition.cnn.com/markets/fear-and-greed", "Origin": "https://edition.cnn.com"})
     with urllib.request.urlopen(req, timeout=30) as resp:
         fg = json.load(resp)["fear_and_greed"]
     out = {"score": round(float(fg["score"]), 1), "rating": fg.get("rating"), "timestamp": fg.get("timestamp"), "source": "CNN"}
