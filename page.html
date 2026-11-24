@@ -518,7 +518,10 @@ createApp({
     // ---- 심리·위기 카드 ----
     const fgZone = v => { if (v == null) return ['입력 필요', '']; if (v <= 24) return ['극단적 공포', 'buy']; if (v <= 44) return ['공포', '']; if (v <= 55) return ['중립', '']; if (v <= 75) return ['탐욕', 'warn']; return ['극단적 탐욕', 'sell']; };
     const vixZone = v => { if (v == null) return ['–', '']; if (v < 20) return ['안정', '']; if (v < 30) return ['불안', 'warn']; if (v < 40) return ['공포 · 바닥 신호', 'buy']; return ['패닉', 'sell']; };
-    const fxZone = s => { const c = s.chg20; if (c == null) return ['–', '']; if (c >= 50) return ['급등 · 위기 경계', 'sell']; if (c >= 15) return ['상승 추세', 'warn']; if (c <= -15) return ['하락 (원화 강세)', '']; return ['보합 · 안정', '']; };
+    // 환율: 장기 방향(6개월 변화 + 200일 평균)으로 판단. 단, 20일 +50원 이상 급등은 위기 경고가 우선.
+    const fxLong = s => { const c = s.chg120, up = s.price > s.ma200; if (c == null || s.ma200 == null) return 'flat'; if (c >= 30 && up) return 'up'; if (c <= -30 && !up) return 'down'; return 'flat'; };
+    const fxZone = s => { if (s.price == null) return ['–', '']; if ((s.chg20 ?? 0) >= 50) return ['급등 · 위기 경계', 'sell'];
+      return { up: ['장기 상승', 'warn'], down: ['장기 하락', ''], flat: ['장기 횡보', ''] }[fxLong(s)]; };
     const cards = computed(() => {
       const sign = v => v == null ? '–' : (v > 0 ? '+' : '') + fmt(v, 0);
       const [fl, ft] = fgZone(fg.value), [vl, vt] = vixZone(vix.value.price), [xl, xt] = fxZone(fxS.value);
@@ -526,7 +529,7 @@ createApp({
       return [
         { key:'fg', title:'공포·탐욕', value: fg.value != null ? fmt(fg.value,0) : '–', label: fl, tone: ft, extra: fgSrc.value ? fgSrc.value.label : 'CNN 값 대기 중', spark: null },
         { key:'vix', title:'VIX', value: fmt(vix.value.price,1), label: vl, tone: vt, extra:`20일 평균 ${fmt(vix.value.ma20,1)}`, spark: spark(vix.value.series?.c) },
-        { key:'fx', title:'환율', value: fmt(fxS.value.price,0) + '원', label: xl, tone: xt, extra:`20일간 ${sign(fxS.value.chg20)}원`, spark: spark(fxS.value.series?.c) },
+        { key:'fx', title:'환율', value: fmt(fxS.value.price,0) + '원', label: xl, tone: xt, extra:`6개월 ${sign(fxS.value.chg120)}원 · 20일 ${sign(fxS.value.chg20)}원`, spark: spark(fxS.value.series?.c, 250) },
         { key:'ma', title:'이동평균선', value: maHead.value, label: `${ups}/4 위`, tone: mr[3].up ? '' : 'warn', extra: `10개월선 ${mr[3].up ? '위' : '아래'}`, spark: spark(idx.value.series?.c) },
       ];
     });
@@ -629,6 +632,7 @@ createApp({
 
     function openInfo(k) {
       const i = idx.value, e = etf.value, c = cfg.value, isS = sel.value === 'SOX';
+      const sign = v => v == null ? '–' : (v > 0 ? '+' : '') + fmt(v, 0);
       const inr = (v, a, b) => v != null && v >= a && v < b;
       const d = c.disp60, r = c.rsi, p = c.per;
       const I = {
@@ -665,10 +669,10 @@ createApp({
           src:'구간: CNN 공식 구분. 값은 CNN 페이지가 쓰는 데이터를 자동으로 받아 오고, 실패하면 직접 입력값을 씁니다.' },
         fx: { title:'원/달러 환율', oneLine:'1달러를 사려면 원화가 얼마 필요한지',
           easy:'세계 금융이 진짜 위험해지면 투자자들이 안전한 달러로 몰려서 환율이 짧은 기간에 크게 올라요(2008년, 2020년 3월). 환율이 차분하면 지금 하락은 주식시장 안의 조정일 가능성이 커요. 그래서 수준보다 "방향과 속도"가 중요해요.',
-          bandTitle:'최근 20거래일 변화',
-          bands:[['+50원 이상','급등: 위기 경계', (fxS.value.chg20??0)>=50,'sell'],['+15 ~ +50원','상승 추세', inr(fxS.value.chg20,15,50),'warn'],['−15 ~ +15원','보합: 안정', inr(fxS.value.chg20,-15,15),''],['−15원 이하','하락 (원화 강세)', (fxS.value.chg20??0)<=-15,'']],
-          now:`${fmt(fxS.value.price,1)}원. 5거래일 전보다 ${fmt(fxS.value.chg5,1)}원, 20거래일 전보다 ${fmt(fxS.value.chg20,1)}원 ${(fxS.value.chg20??0)>=0?'올랐어요':'내렸어요'}. 그래프는 최근 60거래일입니다.`,
-          use:'환율이 20일 동안 50원 넘게 급등하고 VIX가 40을 넘으면 "진짜 위기" 신호로 보고 매수 속도를 늦춥니다.' },
+          bandTitle:'장기 방향 (최근 6개월 변화 + 200일 평균)',
+          bands:[['20일 +50원 이상','급등: 위기 경계 (가장 우선)', (fxS.value.chg20??0)>=50,'sell'],['6개월 +30원 이상, 200일 평균 위','장기 상승', (fxS.value.chg20??0)<50 && fxLong(fxS.value)==='up','warn'],['그 사이','장기 횡보', (fxS.value.chg20??0)<50 && fxLong(fxS.value)==='flat',''],['6개월 −30원 이하, 200일 평균 아래','장기 하락 (원화 강세)', (fxS.value.chg20??0)<50 && fxLong(fxS.value)==='down','']],
+          now:`${fmt(fxS.value.price,1)}원. 6개월 전보다 ${sign(fxS.value.chg120)}원, 1년 전보다 ${sign(fxS.value.chg250)}원이고, 200일 평균(${fmt(fxS.value.ma200,0)}원)보다 ${fxS.value.price > fxS.value.ma200 ? '위' : '아래'}에 있어요. 최근 20일은 ${sign(fxS.value.chg20)}원 움직였어요. 그래프는 최근 1년입니다.`,
+          use:'장기 방향은 시장 분위기를 보는 참고용이에요. 매수 속도를 늦추는 위기 신호는 단기 급등으로 판단해요: 환율이 20일 동안 50원 넘게 급등하고 VIX가 40을 넘을 때입니다.' },
         vix: { title:'VIX 변동성 지수', oneLine:'앞으로 한 달간 미국 주식이 얼마나 출렁일지에 대한 시장의 예상치',
           easy:'"공포 지수"라고도 불러요. 사람들이 폭락에 대비한 보험(옵션)을 비싸게 살수록 올라가요. 평소에는 15~20 정도이고, 패닉이 오면 40을 넘어요(2020년 3월 82).',
           bands:[['20 미만','안정', (vix.value.price??99)<20,''],['20 ~ 30','불안', inr(vix.value.price,20,30),'warn'],['30 ~ 40','공포: 바닥 근처인 경우 많음', inr(vix.value.price,30,40),'buy'],['40 이상','패닉: 위기 확인', (vix.value.price??0)>=40,'sell']],

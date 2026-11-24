@@ -109,18 +109,20 @@ def build(key, symbol):
         out["changePct"] = r((price / out["prevClose"] - 1) * 100)
 
     # Recent daily closes for the page's charts (dates as YYYY-MM-DD)
-    span = 260 if key in ("IXIC", "SOX") else 90
+    span = 260 if key in ("IXIC", "SOX", "USDKRW") else 90
     out["series"] = {
         "d": [iso(x["t"])[:10] for x in daily[-span:]],
         "c": [round(v, 2) for v in closes[-span:]],
     }
 
     if key == "USDKRW" or key == "VIX":
-        for n in (5, 20):
+        # 20일 = 단기 급등(위기) 확인, 120일(약 6개월)·250일(약 1년) = 장기 방향
+        for n in (5, 20, 60, 120, 250):
             if len(closes) > n:
                 out[f"chg{n}"] = r(price - closes[-1 - n])
                 out[f"chg{n}Pct"] = r((price / closes[-1 - n] - 1) * 100)
         out["ma20"] = r(sma(closes, 20))
+        out["ma200"] = r(sma(closes, 200))
         return out
 
     # All-time high from monthly bars (small payload, full history)
