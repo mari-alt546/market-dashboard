@@ -1,5 +1,5 @@
 {
- "updatedAt": "2026-11-24T13:35:44.541349+00:00",
+ "updatedAt": "2026-11-24T13:54:20.234382+00:00",
  "source": "Yahoo Finance",
  "symbols": {
   "IXIC": {
@@ -1564,11 +1564,11 @@
   },
   "VIX": {
    "symbol": "^VIX",
-   "price": 29.91,
+   "price": 29.53,
    "prevClose": 26.62,
-   "marketTime": "2026-11-24T13:20:31+00:00",
+   "marketTime": "2026-11-24T13:39:16+00:00",
    "exchangeTz": "America/Chicago",
-   "changePct": 12.36,
+   "changePct": 10.93,
    "series": {
     "d": [
      "2026-07-22",
@@ -1752,22 +1752,22 @@
      28.44,
      35.89,
      26.62,
-     29.91
+     29.53
     ]
    },
-   "chg5": 4.45,
-   "chg5Pct": 17.48,
-   "chg20": 12.39,
-   "chg20Pct": 70.72,
-   "ma20": 22.73
+   "chg5": 4.07,
+   "chg5Pct": 15.99,
+   "chg20": 12.01,
+   "chg20Pct": 68.55,
+   "ma20": 22.71
   },
   "USDKRW": {
    "symbol": "KRW=X",
-   "price": 1344.58,
+   "price": 1343.48,
    "prevClose": 1344.31,
-   "marketTime": "2026-11-24T13:35:10+00:00",
+   "marketTime": "2026-11-24T13:54:20+00:00",
    "exchangeTz": "Europe/London",
-   "changePct": 0.02,
+   "changePct": -0.06,
    "series": {
     "d": [
      "2026-07-21",
@@ -1951,17 +1951,24 @@
      1330.4,
      1334.79,
      1344.31,
-     1344.58
+     1343.48
     ]
    },
-   "chg5": 8.91,
-   "chg5Pct": 0.67,
-   "chg20": 19.81,
-   "chg20Pct": 1.5,
-   "ma20": 1339.46
+   "chg5": 7.81,
+   "chg5Pct": 0.58,
+   "chg20": 18.71,
+   "chg20Pct": 1.41,
+   "ma20": 1339.41
   }
  },
- "errors": [
-  "FG: HTTP Error 418: Unknown Error"
- ]
+ "errors": [],
+ "fg": {
+  "score": 15.6,
+  "rating": "extreme fear",
+  "timestamp": "2026-11-24T13:37:31+00:00",
+  "source": "CNN",
+  "prevClose": 17.0,
+  "prev1w": 26.0,
+  "prev1m": 16.7
+ }
 }
