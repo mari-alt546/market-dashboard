@@ -7,6 +7,10 @@ on:
     # 그 외 시간: 매시 정각 (환율·VIX 선물 반영)
     - cron: "7 * * * *"
   workflow_dispatch:
+  # 코드가 바뀌어 올라오면 바로 한 번 실행 (data.json만 바뀐 커밋은 제외)
+  push:
+    branches: [main]
+    paths-ignore: [data.json]
 
 permissions:
   contents: write
