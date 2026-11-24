@@ -73,15 +73,18 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:va
 .g .why{font-size:12px;color:var(--sub);margin-top:4px}
 /* 시장 심리 목록: 4줄 모두 같은 높이 */
 .list{margin-top:8px;display:flex;flex-direction:column}
-.li{display:grid;grid-template-columns:minmax(0,1fr) 56px 112px;align-items:center;gap:12px;min-height:60px;padding:8px 0;border-top:1px solid var(--line);user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;transition:transform .15s}
+/* 한 줄 = [이름·설명 | 작은 그래프 | 값·상태]. 이름 칸이 남는 폭을 모두 쓰고, 오른쪽은 내용만큼만 차지 */
+.li{display:flex;align-items:center;gap:12px;min-height:64px;padding:10px 0;border-top:1px solid var(--line);user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;transition:transform .15s}
 .li:first-child{border-top:0}
 .li.pressing{transform:scale(.98)}
-.li-nm{font-size:14px;font-weight:600}
-.li-ex{font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.li-r{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
-.li-v{font-size:16px;font-weight:700;white-space:nowrap}
-.li-r .pill{font-size:11px;padding:2px 7px}
-.spark{display:block;width:56px;height:22px}
+.li-l{flex:1 1 auto;min-width:0}
+.li-nm{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li-ex{font-size:12px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li-r{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.li-v{font-size:17px;font-weight:700;white-space:nowrap;letter-spacing:-.2px}
+.li-r .pill{font-size:11px;padding:2px 8px}
+.spark{flex:none;display:block;width:52px;height:22px}
+@media (max-width:370px){.spark{display:none}}
 .q{width:18px;height:18px;border-radius:50%;background:var(--soft);color:var(--muted);font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex:none}
 /* 계산기 */
 .steps{display:flex;gap:4px;background:var(--soft);border-radius:10px;padding:3px}
@@ -143,9 +146,9 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:va
       </div>
       <div class="stamp">
         <span class="dot" :class="freshClass"></span>
-        <span v-if="data">업데이트 {{ fmtKST(data.updatedAt, true) }} ({{ agoText }})</span>
+        <span v-if="data">업데이트 {{ fmtKST(data.updatedAt) }} · {{ agoText }}</span>
         <span v-else>데이터 불러오는 중…</span>
-        <span v-if="idx">· 시세 {{ marketStatus }}</span>
+        <span v-if="idx">· {{ marketStatus.replace(' KST','') }}</span>
       </div>
     </div>
   </header>
@@ -438,7 +441,7 @@ createApp({
     });
     const per = computed(() => perInfo.value ? perInfo.value.est : null);
     const perStamp = computed(() => { const p = perInfo.value; if (!p) return '수동 입력 필요';
-      return `${p.src === '직접 입력' ? '직접 입력' : '기본값'} ${shortDate(p.date)} ${fmt(p.base,1)}배 · 지수 ${p.move>=0?'+':''}${fmt(p.move,1)}% 반영 · 오차 ±${fmt(p.err,1)}배${p.stale ? ' · 새 값 입력 필요' : ''}`; });
+      return `${shortDate(p.date)} ${fmt(p.base,1)}배에서 보정 · ±${fmt(p.err,1)}${p.stale ? ' · 새 값 필요' : ''}`; });
     // 공포·탐욕: CNN 자동 수집값. 직접 입력한 값이 더 최근이면 그 값을 씀.
     const fgSrc = computed(() => {
       const a = data.value?.fg, m = manual.value;
@@ -521,10 +524,10 @@ createApp({
       const [fl, ft] = fgZone(fg.value), [vl, vt] = vixZone(vix.value.price), [xl, xt] = fxZone(fxS.value);
       const mr = maRows.value, ups = mr.filter(x => x.up).length;
       return [
-        { key:'fg', title:'공포 & 탐욕', value: fg.value != null ? fmt(fg.value,0) : '–', label: fl, tone: ft, extra: fgSrc.value ? fgSrc.value.label : 'CNN 값 대기 중' },
-        { key:'vix', title:'VIX 변동성', value: fmt(vix.value.price,1), label: vl, tone: vt, extra:`20일 평균 ${fmt(vix.value.ma20,1)}`, spark: spark(vix.value.series?.c) },
-        { key:'fx', title:'원/달러 환율', value: fmt(fxS.value.price,0) + '원', label: xl, tone: xt, extra:`20일간 ${sign(fxS.value.chg20)}원`, spark: spark(fxS.value.series?.c) },
-        { key:'ma', title:'이동평균선', value: maHead.value, label: `${ups}/4 위`, tone: mr[3].up ? '' : 'warn', extra: `장기선(10개월) ${mr[3].up ? '위' : '아래'}`, spark: spark(idx.value.series?.c) },
+        { key:'fg', title:'공포·탐욕', value: fg.value != null ? fmt(fg.value,0) : '–', label: fl, tone: ft, extra: fgSrc.value ? fgSrc.value.label : 'CNN 값 대기 중', spark: null },
+        { key:'vix', title:'VIX', value: fmt(vix.value.price,1), label: vl, tone: vt, extra:`20일 평균 ${fmt(vix.value.ma20,1)}`, spark: spark(vix.value.series?.c) },
+        { key:'fx', title:'환율', value: fmt(fxS.value.price,0) + '원', label: xl, tone: xt, extra:`20일간 ${sign(fxS.value.chg20)}원`, spark: spark(fxS.value.series?.c) },
+        { key:'ma', title:'이동평균선', value: maHead.value, label: `${ups}/4 위`, tone: mr[3].up ? '' : 'warn', extra: `10개월선 ${mr[3].up ? '위' : '아래'}`, spark: spark(idx.value.series?.c) },
       ];
     });
     const maRows = computed(() => { const i = idx.value; return [
